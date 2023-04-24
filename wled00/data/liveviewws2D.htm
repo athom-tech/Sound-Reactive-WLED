@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  <meta charset="utf-8">
+  <meta name="theme-color" content="#222222">
+  <title>WLED Live Preview</title>
+  <style>
+  body {
+    margin: 0;
+  }
+  </style>
+</head>
+<body>
+  <!-- WLEDSR from 0.14  + adjusted -->
+  <canvas id="liveviewCanvas">LiveView</canvas> <!-- conditional if 2D? -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>  <!-- conditional load if 3D? -->
+  <script>
+    //2D vars
+    var c = document.getElementById('liveviewCanvas');
+    var ctx = null;
+    var pPL = 0; //pixelsPerLed
+    var lOf = 0; //?
+    var mW = 0; //width
+    var mH = 0; //height
+
+    //3D vars
+    var renderer = null;
+    var scene = null;
+    var camera = null;
+    var mD = 0; //depth
+
+    function updatePreview(leds) {
+      mW = leds[3];
+      mH = leds[4];
+      mD = leds[5];
+      if (leds[2] == 1) { //2D
+        if (!ctx) { //init 2D
+          c.width  = window.innerWidth * 0.98; //remove scroll bars
+    			c.height = window.innerHeight * 0.98; //remove scroll bars
+          ctx = c.getContext('2d');
+          pPL = Math.min(c.width / mW, (c.height-10) / mH); //pixels per led  (width of circle)
+          lOf = Math.floor((c.width - pPL*mW)/2); //left offset (to center matrix)
+        }
+        ctx.clearRect(0, 0, c.width, c.height);
+        for (i = 8; i < leds.length; i+=3) {
+          let index = (i-8)/3;
+          ctx.fillStyle = `rgb(${leds[i]},${leds[i+1]},${leds[i+2]})`;
+          ctx.beginPath();
+          ctx.arc(index%mW*pPL+pPL*0.5+lOf, Math.floor(index/mW)*pPL+pPL*0.5, pPL*0.4, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        ctx.fillStyle = `rgb(255,255,255)`;
+        if (leds[6] != 0) ctx.fillText("preset " + leds[6].toString(), lOf, mH*pPL+10);
+        if (leds[7] != 255) ctx.fillText("playlist " + leds[7].toString(), lOf + 70, mH*pPL+10);
+      }
+      else if (leds[2] == 2) { //3D
+        if (!renderer) { //init 3D
+          c.width  = 0;
+          c.height = 0;
+          renderer = new THREE.WebGLRenderer({alpha: true });
+          renderer.setClearAlpha(0)
+          renderer.setClearColor( 0x000000, 0 );
+          renderer.setSize( window.innerWidth * 0.98 , window.innerHeight * 0.98 );
+          document.body.appendChild( renderer.domElement );
+
+          camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 500 );
+          // const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 2000 );
+          camera.position.set( 0, 0, 100 );
+          camera.lookAt( 0, 0, 0 );
+
+          scene = new THREE.Scene();
+          scene.background = null; //new THREE.Color( 0xff0000 );
+
+          var d = 5; //distanceLED;
+          var offset_x = -d*(mW-1)/2;
+          var offset_y = -d*(mH-1)/2;
+          var offset_z = -d*(mD-1)/2;
+
+          for (var x = 0; x < mW; x++) {
+              for (var y = 0; y < mH; y++) {
+                  for (var z = 0; z < mD; z++) {
+                      const geometry = new THREE.SphereGeometry( 1, 32, 16 );
+                      const material = new THREE.MeshBasicMaterial();
+                      // material.color = new THREE.Color(`${x/mW}`, `${y/mH}`, `${z/mD}`);
+                      const sphere = new THREE.Mesh( geometry, material );
+                      sphere.position.set(offset_x + d*x, offset_y + d*y, offset_z + d*z);
+                      scene.add( sphere );
+                  }
+              }
+          }
+        } //new
+
+        let firstLed = 6;
+        var i = 1;
+        for (var x = 0; x < mW; x++) {
+            for (var y = 0; y < mH; y++) {
+                for (var z = 0; z < mD; z++) {
+                    if (i < scene.children.length)
+                      scene.children[i].material.color = new THREE.Color(`${leds[i*3 + firstLed]/255}`, `${leds[i*3 + firstLed + 1]/255}`, `${leds[i*3 + firstLed + 2]/255}`);
+                    i++;
+                }
+            }
+        }
+        scene.rotation.x += 0.01;
+        scene.rotation.y += 0.01;
+        renderer.render( scene, camera );
+      } //3D
+    } //updatePreview
+
+    // use parent WS or open new
+    var ws;
+    try {
+      ws = top.window.ws;
+    } catch (e) {}
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send("{'lv':true}");
+    } else {
+      ws = new WebSocket((window.location.protocol == "https:"?"wss":"ws")+"://"+document.location.host+"/ws");
+      ws.onopen = ()=>{
+        ws.send("{'lv':true}");
+      }
+    }
+    ws.binaryType = "arraybuffer";
+    ws.addEventListener('message',(e)=>{
+      try {
+        if (toString.call(e.data) === '[object ArrayBuffer]') {
+          let leds = new Uint8Array(event.data);
+          if (leds[0] != 76) return; //'L', set in ws.cpp
+          updatePreview(leds);
+        }
+      } catch (err) {
+        console.error("Peek WS error:",err);
+      } 
+    });
+  </script>
+</body>
+</html>
