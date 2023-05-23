@@ -233,6 +233,7 @@ class Usermod {
     virtual bool handleButton(uint8_t b) { return false; }
     virtual void setup() {}
     virtual void connected() {}
+    virtual void appendConfigData() {}
     virtual void addToJsonState(JsonObject& obj) {}
     virtual void addToJsonInfo(JsonObject& obj) {}
     virtual void readFromJsonState(JsonObject& obj) {}
@@ -254,6 +255,7 @@ class UsermodManager {
     bool handleButton(uint8_t b);
     void setup();
     void connected();
+    void appendConfigData();
     void addToJsonState(JsonObject& obj);
     void addToJsonInfo(JsonObject& obj);
     void readFromJsonState(JsonObject& obj);

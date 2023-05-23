@@ -42,8 +42,10 @@ function B(){window.history.back()}function U(){document.getElementById("uf").st
 .bt{background:#333;color:#fff;font-family:Verdana,sans-serif;border:.3ch solid #333;display:inline-block;font-size:20px;margin:8px;margin-top:12px}input[type=file]{font-size:16px}body{font-family:Verdana,sans-serif;text-align:center;background:#222;color:#fff;line-height:200%}#msg{display:none}
 </style></head><body><h2>Sound Reactive WLED Software Update</h2><form 
 method="POST" action="/update" id="uf" enctype="multipart/form-data" 
-onsubmit="U()">Installed version: SR 0.13.3<br>Download the latest binary: <a 
-href="https://github.com/atuline/WLED/releases" target="_blank"><img 
+onsubmit="U()">Installed version: Athom SR 0.13.3<br>
+Download the latest binary: <a 
+href="https://github.com/athom-tech/Sound-Reactive-WLED/releases" 
+target="_blank"><img 
 src="https://img.shields.io/github/release/atuline/WLED.svg?style=flat-square">
 </a><br><input type="file" class="bt" name="update" required><br><input 
 type="submit" class="bt" value="Update!"><br><button type="button" class="bt" 

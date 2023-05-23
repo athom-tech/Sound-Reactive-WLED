@@ -5,9 +5,6 @@
  * Sending XML status files to client
  */
 
-//macro to convert F to const
-#define SET_F(x)  (const char*)F(x)
-
 //build XML response to HTTP /win API request
 void XML_response(AsyncWebServerRequest *request, char* dest)
 {
@@ -739,6 +736,7 @@ void getSettingsJS(byte subPage, char* dest)
     oappend(SET_F("numM="));
     oappendi(usermods.getModCount());
     oappend(";");
+    usermods.appendConfigData();
   }
 
   if (subPage == 9) // sound reactive

@@ -772,6 +772,10 @@ WLED_GLOBAL TaskHandle_t FFT_Task; //WLEDSR: Moved from audio_reactive.h to glob
   } while(0)
 #endif
 
+
+//macro to convert F to const
+#define SET_F(x)  (const char*)F(x)
+
 //color mangling macros
 #define RGBW32(r,g,b,w) (uint32_t((byte(w) << 24) | (byte(r) << 16) | (byte(g) << 8) | (byte(b))))
 #define R(c) (byte((c) >> 16))

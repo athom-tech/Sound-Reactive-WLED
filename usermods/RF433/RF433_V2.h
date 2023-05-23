@@ -6,7 +6,7 @@
 
 #ifndef RF_PIN
 #ifdef ARDUINO_ARCH_ESP32
-  #define RF_PIN 22
+  #define RF_PIN 23
 #else // ESP8266
   #define RF_PIN 12
 #endif
@@ -18,7 +18,13 @@ private:
   RCSwitch mySwitch = RCSwitch();
   unsigned long lastVaue = 0;
   unsigned long lastTime = 0;
+
+#ifndef SWITCH_DATA
   unsigned long switchdata = 0;
+#else
+  unsigned long switchdata = SWITCH_DATA;
+#endif
+
   unsigned long rftime = 0;
   bool switchenabled = true;
 
@@ -34,10 +40,22 @@ private:
   static const char _pirenabled[];
   static const char _offtime[];
 
+#ifndef PIR_DATA
   unsigned long pirdata = 0;
+#else
+  unsigned long pirdata = PIR_DATA;
+#endif
+
   bool pirenabled = true;
-  unsigned long offtime = 30;
+
+  #ifndef DELAY_OFF
+  unsigned long offtime = 600;
+  #else
+  unsigned long offtime = DELAY_OFF;
+  #endif
+  
   bool initDone = false;
+  bool statusflag = false;
 
 public:
 
@@ -75,38 +93,40 @@ public:
       }
       lastVaue = value;
       lastTime = millis();
-      DEBUG_PRINT(F("RF433接收到: "));
+      DEBUG_PRINT(F("RF433 Receive: "));
       DEBUG_PRINTLN(lastVaue);
       if (switchenabled && lastVaue == switchdata)
       {
+        statusflag = false;
         toggleOnOff();
         stateUpdated(CALL_MODE_NO_NOTIFY);
-        DEBUG_PRINTLN(F("状态切换(Switch)"));
+        DEBUG_PRINTLN(F("Toggle switch"));
       }
       else if (pirenabled && lastVaue == pirdata)
       {
+        statusflag = true;
         rftime = millis() / 1000;
         if (bri == 0)
         {
           bri = briLast;
         }
         stateUpdated(CALL_MODE_NO_NOTIFY);
-        DEBUG_PRINTLN(F("开启状态(Pir)"));
+        DEBUG_PRINTLN(F("Turn on"));
       }
       else
       {
         stateChanged = true; // inform external dvices/UI of change
         stateUpdated(CALL_MODE_DIRECT_CHANGE);
-        DEBUG_PRINTLN(F("不执行任何操作"));
+        DEBUG_PRINTLN(F("Do nothing"));
       }
     }
-    if (rftime > 0 && millis() / 1000 - rftime > offtime)
+    if (rftime > 0 && millis() / 1000 - rftime > offtime && statusflag && pirenabled)
     {
       briLast = bri;
       bri = 0;
       stateUpdated(CALL_MODE_NO_NOTIFY);
       rftime = 0;
-      DEBUG_PRINTLN(F("延时关闭"));
+      DEBUG_PRINTLN(F("Delay Off"));
     }
     
   }
@@ -163,6 +183,11 @@ public:
 
   }
 
+  // void appendConfigData()
+  // {
+  //   oappend(SET_F("addInfo('RF433Usermod:offtime',1,'Second');"));  // 0 is field type, 1 is actual field
+  // }
+
   bool readFromConfig(JsonObject &root)
   {
     // we look for JSON object: {"Autosave": {"switchenabled": true, "autoSaveAfterSec": 10, "autoSavePreset": 250, ...}}
@@ -205,11 +230,11 @@ public:
 
 
 
-const char RF433Usermod::_switchname[] PROGMEM = "RF433Switch";
-const char RF433Usermod::_switchenabled[] PROGMEM = "switchenabled";
-const char RF433Usermod::_switchdata[] PROGMEM = "switchdata";
+const char RF433Usermod::_switchname[]    PROGMEM = "RF433Switch";
+const char RF433Usermod::_switchenabled[] PROGMEM = "enabled";
+const char RF433Usermod::_switchdata[]    PROGMEM = "switchdata";
 
-const char RF433Usermod::_pirname[] PROGMEM = "RF433Pir";
-const char RF433Usermod::_pirenabled[] PROGMEM = "pirenabled";
-const char RF433Usermod::_pirdata[] PROGMEM = "pirdata";
-const char RF433Usermod::_offtime[] PROGMEM = "offtime";
+const char RF433Usermod::_pirname[]       PROGMEM = "RF433Pir";
+const char RF433Usermod::_pirenabled[]    PROGMEM = "enabled";
+const char RF433Usermod::_pirdata[]       PROGMEM = "pirdata";
+const char RF433Usermod::_offtime[]       PROGMEM = "offtime(Sec)";

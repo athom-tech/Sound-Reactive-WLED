@@ -4,8 +4,11 @@
  */
 
 //Usermod Manager internals
+void UsermodManager::setup()             { for (byte i = 0; i < numMods; i++) ums[i]->setup(); }
+void UsermodManager::connected()         { for (byte i = 0; i < numMods; i++) ums[i]->connected(); }
 void UsermodManager::loop()              { for (byte i = 0; i < numMods; i++) ums[i]->loop();  }
 void UsermodManager::handleOverlayDraw() { for (byte i = 0; i < numMods; i++) ums[i]->handleOverlayDraw(); }
+void UsermodManager::appendConfigData()  { for (byte i = 0; i < numMods; i++) ums[i]->appendConfigData(); }
 bool UsermodManager::handleButton(uint8_t b) { 
   bool overrideIO = false;
   for (byte i = 0; i < numMods; i++) {
@@ -13,9 +16,6 @@ bool UsermodManager::handleButton(uint8_t b) {
   }
   return overrideIO;
 }
-
-void UsermodManager::setup()     { for (byte i = 0; i < numMods; i++) ums[i]->setup(); }
-void UsermodManager::connected() { for (byte i = 0; i < numMods; i++) ums[i]->connected(); }
 
 void UsermodManager::addToJsonState(JsonObject& obj)    { for (byte i = 0; i < numMods; i++) ums[i]->addToJsonState(obj); }
 void UsermodManager::addToJsonInfo(JsonObject& obj)     { for (byte i = 0; i < numMods; i++) ums[i]->addToJsonInfo(obj); }
